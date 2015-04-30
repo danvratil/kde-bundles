@@ -1,0 +1,10 @@
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+Makefile
+packages/SOURCES/*.tar.xz
+packages/BUILD
+packages/BUILDROOT
+packages/RPMS
+packages/SRPMS
+repo
