@@ -126,7 +126,10 @@ function(add_bundle)
         COMMAND xdg-app build ${CMAKE_SOURCE_DIR}/build/${BUNDLE_URI} rpmbuild -D "_topdir ${CMAKE_SOURCE_DIR}/packages" -ba ${relSpecFile}
         COMMAND xdg-app build ${CMAKE_SOURCE_DIR}/build/${BUNDLE_URI} rpm -i ${installableRPMs}
         COMMAND xdg-app build-finish --command="${BUNDLE_EXECUTABLE}" --allow=x11 --allow=host-fs --allow=homedir --allow=pulseaudio --allow=session-dbus ${CMAKE_SOURCE_DIR}/build/${BUNDLE_URI}
-        COMMAND xdg-app build-export repo ${CMAKE_SOURCE_DIR}/build/${BUNDLE_URI}
+        COMMAND echo "Update ${BUNDLE_URI}" > /tmp/${BUNDLE_URI}-commit-msg
+        COMMAND nano /tmp/${BUNDLE_URI}-commit-msg
+        COMMAND xdg-app build-export repo ${CMAKE_SOURCE_DIR}/build/${BUNDLE_URI} -s `cat /tmp/${BUNDLE_URI}-commit-msg`
+        COMMAND ${CMAKE_COMMAND} -E remove /tmp/${BUNDLE_URI}-commit-msg
         DEPENDS ${specFile} ${sourceFiles}
     )
     add_custom_target(${BUNDLE_URI}-build
@@ -163,5 +166,9 @@ add_bundle(URI org.kde.Ark
 )
 add_bundle(URI org.kde.Marble
            PACKAGE marble
-           EXECUTABLE marble
+           EXECUTABLE marble-qt
+)
+add_bundle(URI org.kde.Trojita
+           PACKAGE trojita
+           EXECUTABLE trojita
 )
