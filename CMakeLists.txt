@@ -37,17 +37,8 @@ function(parseSPECFile package specFile sourcesList allRPMs)
 endfunction()
 
 
-function(initBuildDir builddir package uri)
-    add_custom_command(
-        OUTPUT ${builddir}/metadata
-        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green "Initializing build directory"
-        COMMAND ${CMAKE_COMMAND} -E remove_directory ${builddir}
-        COMMAND xdg-app build-init ${builddir} -v ${KF5_SDK}.Var ${uri} ${KF5_SDK} ${KF5_PLATFORM} ${KF5_SDK_VERSION}
-    )
-endfunction()
-
-
 function(getSources specFile allSources urls sourceFiles)
+    set(newSourceFiles)
     foreach(sourceUrl ${urls})
         get_filename_component(fileName ${sourceUrl} NAME)
         set(sourceFile "${CMAKE_SOURCE_DIR}/packages/SOURCES/${fileName}")
@@ -66,11 +57,15 @@ function(getSources specFile allSources urls sourceFiles)
 
     # Propagate the changes we did to allSources up
     set(allSources ${allSources} PARENT_SCOPE)
-    set(${sourceFiles} ${${sourceFiles}} PARENT_SCOPE)
+    if ("${newSourceFiles}")
+        set(${sourceFiles} ${newSourceFiles} PARENT_SCOPE)
+    else()
+        set(${sourceFiles} "" PARENT_SCOPE)
+    endif()
 endfunction()
 
 
-function(buildRPM builddir package allSources buildRPMs runtimeRPMs)
+function(buildRPM builddir package uri allSources buildRPMs runtimeRPMs)
     set(specFile "${CMAKE_SOURCE_DIR}/packages/SPECS/${package}.spec")
 
     set(buildDeps ${buildRPMs})
@@ -97,11 +92,15 @@ function(buildRPM builddir package allSources buildRPMs runtimeRPMs)
     set(relSpecFile "packages/SPECS/${package}.spec")
     add_custom_command(
         OUTPUT ${allRPMs}
-        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green "Installing dependencies..."
+        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Initializing build directory\"
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${builddir}
+        COMMAND xdg-app build-init ${builddir} -v ${KF5_SDK}.Var ${uri} ${KF5_SDK} ${KF5_PLATFORM} ${KF5_SDK_VERSION}
+        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Installing dependencies\"
         COMMAND if [ -n \"${buildDeps}${runtimeDeps}\" ]\; then xdg-app build ${builddir} rpm -i ${buildDeps} ${runtimeDeps}\; fi
-        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green "Building RPM..."
+        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Building RPM\"
         COMMAND xdg-app build ${builddir} rpmbuild -D \"_topdir ${CMAKE_SOURCE_DIR}/packages\" -ba ${relSpecFile}
-        DEPENDS ${builddir}/metadata ${specFile} ${sourceFiles} ${buildDeps} ${runtimeDeps}
+        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Cleaning up build directory\"
+        DEPENDS ${specFile} ${sourceFiles} ${buildDeps} ${runtimeDeps}
     )
 
     add_custom_target(${package}-build
@@ -111,21 +110,30 @@ function(buildRPM builddir package allSources buildRPMs runtimeRPMs)
 
     # Split runtime and devel packages
     foreach(rpm ${allRPMs})
-        set(runtime TRUE)
+        set(dest "RUNTIME")
         # Completely ignore debuginfos
-        STRING(FIND "${rpm}" "-debuginfo-" pos REVERSE)
-        if (${pos} EQUAL -1)
-            foreach (match IN ITEMS "-dev-" "-static-")
-                STRING(FIND "${rpm}" "${match}" pos REVERSE)
-                if (${pos} GREATER -1)
-                    set(runtime FALSE)
+        foreach (match IN ITEMS "-dev-" "-static-" "-debuginfo-" "-utils-" "-samples-" "-examples-")
+            STRING(FIND "${rpm}" "${match}" pos REVERSE)
+            if (${pos} GREATER -1)
+                if (${match} STREQUAL "-debuginfo-" OR ${match} STREQUAL "-utils-" OR
+                    ${match} STREQUAL "-samples-" OR ${match} STREQUAL "-examples-")
+                    set(dest "EXCLUDE")
+                    break()
+                elseif (${match} STREQUAL "-dev-" OR ${match} STREQUAL "-static-")
+                    set(dest "DEVEL")
+                    break()
+                else()
+                    set(dest "RUNTIME")
+                    break()
                 endif()
-            endforeach()
-            if (NOT ${runtime})
-                LIST(APPEND buildDeps ${rpm})
-            else()
-                LIST(APPEND runtimeDeps ${rpm})
             endif()
+        endforeach()
+        if (${dest} STREQUAL "DEVEL")
+            LIST(APPEND buildDeps ${rpm})
+        elseif (${dest} STREQUAL "RUNTIME")
+            LIST(APPEND runtimeDeps ${rpm})
+        else()
+            # Exclude
         endif()
     endforeach()
 
@@ -134,7 +142,7 @@ function(buildRPM builddir package allSources buildRPMs runtimeRPMs)
 endfunction()
 
 
-function(createAndExportBundle builddir uri rpms executable privileges)
+function(createAndExportBundle uri rpms executable privileges)
     set(arguments "")
     foreach (priv ${privileges})
         if ("${priv}" STREQUAL "SESSION_DBUS")
@@ -162,17 +170,21 @@ function(createAndExportBundle builddir uri rpms executable privileges)
         endif()
     endforeach()
 
+    set(builddir "${CMAKE_SOURCE_DIR}/build/${uri}")
     add_custom_command(
         TARGET ${uri} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Installing packages into builddir...\"
+        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Preparing builddir for export\"
+        COMMAND xdg-app build-init ${builddir} -v ${KF5_SDK}.Var ${uri} ${KF5_SDK} ${KF5_PLATFORM} ${KF5_SDK_VERSION}
+        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Installing packages into builddir\"
         COMMAND xdg-app build ${builddir} rpm -i ${rpms}
-        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Finishing build and generating metadata...\"
+        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Finishing build and generating metadata\"
         COMMAND xdg-app build-finish --command=\"${executable}\" ${arguments} ${builddir}
         COMMAND echo \"Build ${uri}\" > ${builddir}/.COMMITMSG
         COMMAND nano ${builddir}/.COMMITMSG
-        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Exporting build into repository...\"
+        COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Exporting build into repository\"
         COMMAND xdg-app build-export repo ${builddir} -s \"`cat ${builddir}/.COMMITMSG`\"
         COMMAND ${CMAKE_COMMAND} -E remove ${builddir}/.COMMITMSG
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${builddir}
         DEPENDS ${specFile} ${sourceFiles}
     )
 endfunction()
@@ -181,7 +193,7 @@ endfunction()
 function(add_bundle)
     set(options)
     set(oneValueArgs URI PACKAGE EXECUTABLE)
-    set(multiValueArgs DEPENDS BUILD_DEPENDS PRIVILEGES)
+    set(multiValueArgs DEPENDS PRIVILEGES)
     cmake_parse_arguments(BUNDLE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if ("${BUNDLE_URI}" STREQUAL "")
@@ -196,17 +208,18 @@ function(add_bundle)
 
     add_custom_target(${BUNDLE_PACKAGE})
 
-    # Initialize build directory
     set(builddir "${CMAKE_SOURCE_DIR}/build/${BUNDLE_PACKAGE}")
-    initBuildDir(${builddir} ${BUNDLE_PACKAGE} ${BUNDLE_URI})
+    set(buildRPMs)
+    set(runtimeRPMs)
+    foreach (dep ${BUNDLE_DEPENDS})
+        set(buildRPMs ${${dep}_BUILD_RPMS} ${buildRPMs})
+        set(runtimeRPMs ${${dep}_RPMS} ${runtimeRPMs})
+    endforeach()
 
-    # Build
-    set(runtimeRPMs ${BUNDLE_DEPENDS})
-    set(buildRPMs ${BUNDLE_BUILD_DEPENDS})
     add_custom_target(${BUNDLE_URI} ALL DEPENDS ${BUNDLE_PACKAGE})
-    buildRPM(${builddir} ${BUNDLE_PACKAGE} "${allSources}" "${buildRPMs}" "${runtimeRPMs}")
+    buildRPM(${builddir} ${BUNDLE_PACKAGE} ${BUNDLE_URI} "${allSources}" "${buildRPMs}" "${runtimeRPMs}")
 
-    createAndExportBundle(${builddir} ${BUNDLE_URI} "${runtimeRPMs}" ${BUNDLE_EXECUTABLE} "${BUNDLE_PRIVILEGES}")
+    createAndExportBundle(${BUNDLE_URI} "${runtimeRPMs}" ${BUNDLE_EXECUTABLE} "${BUNDLE_PRIVILEGES}")
 
     set(allSources ${allSources} PARENT_SCOPE)
 endfunction()
@@ -214,19 +227,21 @@ endfunction()
 function(add_package package)
     set(options)
     set(oneValueArgs)
-    set(multiValueArgs BUILD_DEPENDS DEPENDS)
+    set(multiValueArgs DEPENDS)
     cmake_parse_arguments(PACKAGE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     add_custom_target(${package})
 
     set(builddir "${CMAKE_SOURCE_DIR}/build/${package}")
-    initBuildDir(${builddir} ${package} "org.kde.private.dependencyBuild")
-
-    set(buildRPMs ${PACKAGE_BUILD_DEPENDS})
-    set(runtimeRPMs ${PACKAGE_DEPENDS})
+    set(buildRPMs)
+    set(runtimeRPMs)
+    foreach (dep ${PACKAGE_DEPENDS})
+        set(buildRPMs ${${dep}_BUILD_RPMS} ${buildRPMs})
+        set(runtimeRPMs ${${dep}_RPMS} ${runtimeRPMs})
+    endforeach()
     set(allSources "")
 
-    buildRPM(${builddir} ${package} "${allSources}" "${buildRPMs}" "${runtimeRPMs}")
+    buildRPM(${builddir} ${package} "org.kde.tmp" "${allSources}" "${buildRPMs}" "${runtimeRPMs}")
     add_dependencies(${package} ${package}-build)
 
     set(allSources ${allSources} PARENT_SCOPE)
