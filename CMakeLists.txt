@@ -250,6 +250,15 @@ function(add_package package)
     set(${package}_BUILD_RPMS ${buildRPMs} PARENT_SCOPE)
 endfunction()
 
+# Packages
+add_package(gsm)
+add_package(libsndfile DEPENDS gsm)
+add_package(libkdegames DEPENDS libsndfile)
+add_package(exiv2)
+add_package(LibRaw)
+add_package(libkdcraw DEPENDS LibRaw)
+
+# Bundles
 add_bundle(URI org.kde.Kate
            PACKAGE kate
            EXECUTABLE kate
@@ -258,6 +267,7 @@ add_bundle(URI org.kde.Kate
 add_bundle(URI org.kde.GwenView
            PACKAGE gwenview
            EXECUTABLE gwenview
+           DEPENDS exiv2 libkdcraw
            PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
 )
 add_bundle(URI org.kde.KCalc
@@ -283,10 +293,17 @@ add_bundle(URI org.kde.Ark
 add_bundle(URI org.kde.Marble
            PACKAGE marble
            EXECUTABLE marble-qt
-           PRIVILEGES X11 NETWORK HOMEDIR
+           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
 )
 add_bundle(URI org.kde.Trojita
            PACKAGE trojita
            EXECUTABLE trojita
            PRIVILEGES X11 NETWORK HOMEDIR
 )
+add_bundle(URI org.kde.Bomber
+           PACKAGE bomber
+           EXECUTABLE bomber
+           DEPENDS libkdegames
+           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
+)
+
