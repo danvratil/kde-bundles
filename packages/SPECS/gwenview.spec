@@ -26,11 +26,11 @@ BuildRequires: kf5-kactivities-dev
 BuildRequires: kf5-kdelibs4support-dev
 BuildRequires: kf5-kio-dev
 ## frameworks soon to come (hopefully) -- rex
-#BuildRequires: kf5-kdcraw-dev
+BuildRequires: libkdcraw-dev
 #BuildRequires: kf5-kipi-dev
 #BuildRequires: libappstream-glib
 BuildRequires: libjpeg-dev
-#BuildRequires: pkgconfig(exiv2)
+BuildRequires: pkgconfig(exiv2)
 #BuildRequires: pkgconfig(lcms2)
 #BuildRequires: pkgconfig(libpng)
 BuildRequires: pkgconfig(phonon4qt5)
@@ -62,7 +62,7 @@ make install/fast DESTDIR=%{buildroot} -C %{_target_platform}
 
 %check
 appstream-util validate-relax --nonet %{buildroot}%{_kf5_datadir}/appdata/%{name}.appdata.xml ||:
-desktop-file-validate %{buildroot}%{_kde4_datadir}/applications/org.kde.%{name}.desktop
+desktop-file-validate %{buildroot}%{_datadir}/applications/org.kde.%{name}.desktop
 
 
 %post
@@ -82,9 +82,9 @@ gtk-update-icon-cache %{_kf5_datadir}/icons/hicolor &> /dev/null || :
 %files
 %doc COPYING
 %{_kf5_bindir}/%{name}*
-%{_kf5_datadir}/applications/org.kde.%{name}.desktop
+%{_datadir}/applications/org.kde.%{name}.desktop
 %{_datadir}/appdata/%{name}.appdata.xml
-%{_kf5_datadir}/icons/hicolor/*/*/*
+%{_datadir}/icons/hicolor/*/*/*
 %{_docdir}/HTML/en/gwenview/
 %{_kf5_datadir}/gvpart/
 %{_kf5_datadir}/kservices5/gvpart.desktop
