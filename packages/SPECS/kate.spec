@@ -69,9 +69,15 @@ make %{?_smp_mflags} -C %{_target_platform}
 %install
 make install/fast DESTDIR=%{buildroot} -C %{_target_platform}
 
+# Fix for exports
+for s in %{buildroot}/%{_kf5_datadir}/icons/hicolor/*; do
+    mv $s/apps/{%{name},org.kde.%{name}}.*
+done
+sed -i "s/Icon=%{name}/Icon=%{name}/" %{buildroot}/%{_kf5_datadir}/applications/org.kde.%{name}.desktop
+
 
 %check
-desktop-file-validate %{buildroot}%{_kf5_datadir}/applications/org.kde.kate.desktop
+desktop-file-validate %{buildroot}%{_kf5_datadir}/applications/org.kde.%{name}.desktop
 
 
 %post

@@ -59,6 +59,12 @@ make install/fast DESTDIR=%{buildroot} -C %{_target_platform}
 # Not installed
 rm %{buildroot}/%{_kf5_libdir}/libkerfuffle.so
 
+# Fix for exports
+for s in %{buildroot}/%{_kf5_datadir}/icons/hicolor/*; do
+    mv $s/apps/{%{name},org.kde.%{name}}.*
+done
+sed -i "s/Icon=%{name}/Icon=org.kde.%{name}/" %{buildroot}/%{_kf5_datadir}/applications/org.kde.%{name}.desktop
+
 %check
 appstream-util validate-relax --nonet %{buildroot}%{_kf5_datadir}/appdata/%{name}.appdata.xml ||:
 desktop-file-validate %{buildroot}%{_kf5_datadir}/applications/org.kde.%{name}.desktop
@@ -77,7 +83,7 @@ desktop-file-validate %{buildroot}%{_kf5_datadir}/applications/org.kde.%{name}.d
 %{_kf5_libdir}/libkerfuffle.so.*
 %{_kf5_qtplugindir}/*.so
 %{_kf5_datadir}/config.kcfg/*.kcfg
-%{_kf5_datadir}/icons/hicolor/*/*/ark.png
+%{_kf5_datadir}/icons/hicolor/*/*/*
 %{_kf5_datadir}/kservices5/ServiceMenus/*.desktop
 %{_kf5_datadir}/kservices5/*.desktop
 %{_kf5_datadir}/kservicetypes5/*.desktop

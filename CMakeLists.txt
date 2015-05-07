@@ -142,7 +142,7 @@ function(buildRPM builddir package uri allSources buildRPMs runtimeRPMs)
 endfunction()
 
 
-function(createAndExportBundle uri rpms executable privileges)
+function(createAndExportBundle uri rpms executable privileges environments)
     set(arguments "")
     foreach (priv ${privileges})
         if ("${priv}" STREQUAL "SESSION_DBUS")
@@ -170,6 +170,10 @@ function(createAndExportBundle uri rpms executable privileges)
         endif()
     endforeach()
 
+    foreach(env ${environments})
+        set(arguments ${arguments} --env=${env})
+    endforeach()
+
     set(builddir "${CMAKE_SOURCE_DIR}/build/${uri}")
     add_custom_command(
         TARGET ${uri} POST_BUILD
@@ -190,10 +194,10 @@ function(createAndExportBundle uri rpms executable privileges)
 endfunction()
 
 
-function(add_bundle)
+function(add_bundle BUNDLE_URI)
     set(options)
-    set(oneValueArgs URI PACKAGE EXECUTABLE)
-    set(multiValueArgs DEPENDS PRIVILEGES)
+    set(oneValueArgs PACKAGE EXECUTABLE)
+    set(multiValueArgs DEPENDS PRIVILEGES ENVIRON)
     cmake_parse_arguments(BUNDLE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if ("${BUNDLE_URI}" STREQUAL "")
@@ -202,8 +206,10 @@ function(add_bundle)
     if ("${BUNDLE_PACKAGE}" STREQUAL "")
         message(FATAL_ERROR "Bundle source RPM package name must be specified")
     endif()
+
+    # EXECUTABLE is optional, use package name when not set
     if ("${BUNDLE_EXECUTABLE}" STREQUAL "")
-        message(FATAL_ERROR "Bundle main executable name must be specified")
+        set(BUNDLE_EXECUTABLE "${BUNDLE_PACKAGE}")
     endif()
 
     add_custom_target(${BUNDLE_PACKAGE})
@@ -219,7 +225,7 @@ function(add_bundle)
     add_custom_target(${BUNDLE_URI} ALL DEPENDS ${BUNDLE_PACKAGE})
     buildRPM(${builddir} ${BUNDLE_PACKAGE} ${BUNDLE_URI} "${allSources}" "${buildRPMs}" "${runtimeRPMs}")
 
-    createAndExportBundle(${BUNDLE_URI} "${runtimeRPMs}" ${BUNDLE_EXECUTABLE} "${BUNDLE_PRIVILEGES}")
+    createAndExportBundle(${BUNDLE_URI} "${runtimeRPMs}" ${BUNDLE_EXECUTABLE} "${BUNDLE_PRIVILEGES}" "${BUNDLE_ENVIRON}")
 
     set(allSources ${allSources} PARENT_SCOPE)
 endfunction()
@@ -254,56 +260,79 @@ endfunction()
 add_package(gsm)
 add_package(libsndfile DEPENDS gsm)
 add_package(libkdegames DEPENDS libsndfile)
+add_package(libkeduvocdocument)
 add_package(exiv2)
 add_package(LibRaw)
 add_package(libkdcraw DEPENDS LibRaw)
+add_package(qimageblitz)
 
 # Bundles
-add_bundle(URI org.kde.Kate
+add_bundle(org.kde.kate
            PACKAGE kate
-           EXECUTABLE kate
            PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR HOSTFS
 )
-add_bundle(URI org.kde.GwenView
+add_bundle(org.kde.gwenview
            PACKAGE gwenview
-           EXECUTABLE gwenview
            DEPENDS exiv2 libkdcraw
            PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
 )
-add_bundle(URI org.kde.KCalc
+add_bundle(org.kde.kcalc
            PACKAGE kcalc
-           EXECUTABLE kcalc
            PRIVILEGES X11
 )
-add_bundle(URI org.kde.Konsole
+add_bundle(org.kde.konsole
            PACKAGE konsole
-           EXECUTABLE konsole
            PRIVILEGES X11 SESSION_DBUS SYSTEM_DBUS NETWORK HOMEDIR HOSTFS IPC
 )
-add_bundle(URI org.kde.Dolphin
-           PACKAGE dolphin
-           EXECUTABLE dolphin
-           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR HOSTFS
-)
-add_bundle(URI org.kde.Ark
+#add_bundle(org.kde.Dolphin
+#           PACKAGE dolphin
+#           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR HOSTFS
+#)
+add_bundle(org.kde.ark
            PACKAGE ark
-           EXECUTABLE ark
            PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
 )
-add_bundle(URI org.kde.Marble
+add_bundle(org.kde.marble
            PACKAGE marble
            EXECUTABLE marble-qt
-           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
+           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR DRI
 )
-add_bundle(URI org.kde.Trojita
+add_bundle(org.kde.trojita
            PACKAGE trojita
-           EXECUTABLE trojita
            PRIVILEGES X11 NETWORK HOMEDIR
 )
-add_bundle(URI org.kde.Bomber
-           PACKAGE bomber
-           EXECUTABLE bomber
-           DEPENDS libkdegames
+add_bundle(org.kde.konversation
+           PACKAGE konversation
+           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
+)
+add_bundle(org.kde.kcharselect
+           PACKAGE kcharselect
+           PRIVILEGES X11 SESSION_DBUS NETWORK
+)
+add_bundle(org.kde.kolourpaint
+           PACKAGE kolourpaint
+           DEPENDS qimageblitz
            PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
 )
 
+# GAMES
+add_bundle(org.kde.bomber
+           PACKAGE bomber
+           DEPENDS libkdegames
+           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
+)
+add_bundle(org.kde.kubrick
+           PACKAGE kubrick
+           DEPENDS libkdegames
+           PRIVILEGES X11 HOMEDIR DRI
+)
+add_bundle(org.kde.knetwalk
+           PACKAGE knetwalk
+           DEPENDS libkdegames
+           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR DRI
+)
+add_bundle(org.kde.khangman
+          PACKAGE khangman
+          DEPENDS libkdegames libkeduvocdocument
+          PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR DRI
+)

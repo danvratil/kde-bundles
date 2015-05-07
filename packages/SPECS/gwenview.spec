@@ -6,7 +6,8 @@ Release:        1%{?dist}
 # app: GPLv2+
 # lib:  IJG and (LGPLv2 or LGPLv3 or LGPLv3+ (KDE e.V.)) and LGPLv2+ and GPLv2+
 License:        GPLv2+
-URL:            https://projects.kde.org/projects/kde/kdegraphics/gwenview
+URL:            https://projects.kde.org/projects/kde/kdegraphics/%{name}
+
 %global revision %(echo %{version} | cut -d. -f3)
 %if %{revision} >= 50
 %global stable unstable
@@ -59,6 +60,12 @@ make %{?_smp_mflags} -C %{_target_platform}
 %install
 make install/fast DESTDIR=%{buildroot} -C %{_target_platform}
 
+# Fix for exports
+for s in %{buildroot}/%{_kf5_datadir}/icons/hicolor/*; do
+    mv $s/apps/{%{name},org.kde.%{name}}.*
+done
+sed -i "s/Icon=%{name}/Icon=org.kde.%{name}/" %{buildroot}/%{_kf5_datadir}/applications/org.kde.%{name}.desktop
+
 
 %check
 appstream-util validate-relax --nonet %{buildroot}%{_kf5_datadir}/appdata/%{name}.appdata.xml ||:
@@ -85,12 +92,12 @@ gtk-update-icon-cache %{_kf5_datadir}/icons/hicolor &> /dev/null || :
 %{_datadir}/applications/org.kde.%{name}.desktop
 %{_datadir}/appdata/%{name}.appdata.xml
 %{_datadir}/icons/hicolor/*/*/*
-%{_docdir}/HTML/en/gwenview/
+%{_docdir}/HTML/en/%{name}/
 %{_kf5_datadir}/gvpart/
+%{_kf5_datadir}/kxmlgui5/%{name}/
 %{_kf5_datadir}/kservices5/gvpart.desktop
-%{_kf5_datadir}/gwenview/
+%{_kf5_datadir}/%{name}/
 %{_kf5_datadir}/kservices5/ServiceMenus/slideshow.desktop
-%{_kf5_datadir}/kxmlgui5/gwenview/
 %{_kf5_libdir}/libgwenviewlib.so.*
 %{_kf5_qtplugindir}/gvpart.so
 

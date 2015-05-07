@@ -32,10 +32,7 @@ BuildRequires:  phonon-dev
 BuildRequires:  desktop-file-utils
 
 %description
-Marble is a Virtual Globe and World Atlas that you can use to learn more
-about Earth: You can pan and zoom around and you can look up places and
-roads. A mouse click on a place label will provide the respective
-Wikipedia article.
+%{summary}.
 
 
 %prep
@@ -52,6 +49,12 @@ make %{?_smp_mflags} -C %{_target_platform}
 
 %install
 make install/fast DESTDIR=%{buildroot} -C %{_target_platform}
+
+# Fix for exports
+for s in %{buildroot}/%{_kf5_datadir}/icons/hicolor/*; do
+    mv $s/apps/{%{name},org.kde.%{name}}.*
+done
+sed -i "s/Icon=%{name}/Icon=org.kde.%{name}/" %{buildroot}/%{_kf5_datadir}/applications/org.kde.%{name}.desktop
 
 
 %check
@@ -72,14 +75,14 @@ touch --no-create %{_kf5_datadir}/icons/hicolor &> /dev/null || :
 
 %files
 %doc COPYING COPYING.LIB
-%{_kf5_bindir}/bomber
-%{_kf5_datadir}/bomber
+%{_kf5_bindir}/%{name}
+%{_kf5_datadir}/%{name}
 %{_datadir}/icons/hicolor/*/*/*
-%{_datadir}/appdata/bomber.appdata.xml
-%{_datadir}/applications/org.kde.bomber.desktop
-%{_datadir}/config.kcfg/bomber.kcfg
-%{_datadir}/doc/HTML/*/bomber
-%{_kf5_datadir}/kxmlgui5/bomber
+%{_datadir}/appdata/%{name}.appdata.xml
+%{_datadir}/applications/org.kde.%{name}.desktop
+%{_datadir}/config.kcfg/%{name}.kcfg
+%{_datadir}/doc/HTML/*/%{name}
+%{_kf5_datadir}/kxmlgui5/%{name}
 
 %changelog
 * Mon May 04 2015 Daniel Vrátil <dvratil@redhat.com> - 15.04.0-1

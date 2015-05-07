@@ -23,7 +23,7 @@ Source0:        dolphin-%{git_commit}.tar.gz
 BuildRequires:  cmake
 BuildRequires:  desktop-file-utils
 BuildRequires:  extra-cmake-modules
-BuildRequires:   gettext
+BuildRequires:  gettext
 BuildRequires:  kf5-rpm-macros
 
 BuildRequires:  qt5-qtbase-dev

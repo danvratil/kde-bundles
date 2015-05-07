@@ -57,13 +57,21 @@ make %{?_smp_mflags} -C %{_target_platform}
 %install
 make install/fast DESTDIR=%{buildroot} -C %{_target_platform}
 
-
+# Fix for exports
+for s in %{buildroot}/%{_kf5_datadir}/icons/hicolor/*; do
+    mv $s/apps/{%{name},org.kde.%{name}}.*
+done
+mv %{buildroot}/%{_kf5_datadir}/applications/{%{name}-qt,org.kde.%{name}}.desktop
+mv %{buildroot}/%{_kf5_datadir}/applications/{%{name}-touch,org.kde.%{name}-touch}.desktop
+mv %{buildroot}/%{_kf5_datadir}/applications/{%{name}-mobile,org.kde.%{name}-mobile}.desktop
+sed -i "s/Icon=%{name}/Icon=org.kde.%{name}/" %{buildroot}/%{_kf5_datadir}/applications/org.kde.%{name}.desktop
+sed -i "s/Icon=%{name}/Icon=org.kde.%{name}/" %{buildroot}/%{_kf5_datadir}/applications/org.kde.%{name}-touch.desktop
+sed -i "s/Icon=%{name}/Icon=org.kde.%{name}/" %{buildroot}/%{_kf5_datadir}/applications/org.kde.%{name}-mobile.desktop
 %check
 appstream-util validate-relax --nonet %{buildroot}%{_kf5_datadir}/appdata/%{name}.appdata.xml ||:
-desktop-file-validate %{buildroot}%{_kf5_datadir}/applications/marble_gpx.desktop
-desktop-file-validate %{buildroot}%{_kf5_datadir}/applications/marble_osm.desktop
-desktop-file-validate %{buildroot}%{_kf5_datadir}/applications/marble_kml.desktop
-
+for name in org.kde.marble org.kde.marble-mobile org.kde.marble-touch marble_gpx marble_osm marble_kml; do
+    desktop-file-validate %{buildroot}%{_kf5_datadir}/applications/$name.desktop
+done
 
 %post
 touch --no-create %{_kf5_datadir}/icons/hicolor &> /dev/null || :
@@ -87,7 +95,7 @@ touch --no-create %{_kf5_datadir}/icons/hicolor &> /dev/null || :
 %{_kf5_libdir}/plugins/designer/*.so
 %{_kf5_datadir}/marble
 %{_kf5_datadir}/applications/*.desktop
-%{_kf5_datadir}/icons/hicolor/*/*/marble.png
+%{_kf5_datadir}/icons/hicolor/*/*/*
 %{_kf5_datadir}/appdata/marble.appdata.xml
 
 %post libs -p /sbin/ldconfig

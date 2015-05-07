@@ -35,10 +35,16 @@ make %{?_smp_mflags} -C %{_target_platform}
 %install
 make install/fast DESTDIR=%{buildroot} -C %{_target_platform}
 
+# Fix for exports
+for s in %{buildroot}/%{_datadir}/icons/hicolor/*; do
+    mv $s/apps/{%{name},org.kde.%{name}}.*
+done
+mv %{buildroot}/%{_datadir}/applications/{%{name},org.kde.%{name}}.desktop
+sed -i "s/Icon=%{name}/Icon=org.kde.%{name}/" %{buildroot}/%{_datadir}/applications/org.kde.%{name}.desktop
 
 %check
 appstream-util validate-relax --nonet %{buildroot}%{_datadir}/appdata/%{name}.appdata.xml ||:
-desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
+desktop-file-validate %{buildroot}%{_datadir}/applications/org.kde.%{name}.desktop
 
 %post
 touch --no-create %{_kf5_datadir}/icons/hicolor &> /dev/null || :
@@ -58,7 +64,7 @@ touch --no-create %{_kf5_datadir}/icons/hicolor &> /dev/null || :
 %{_bindir}/be.contacts
 %{_libdir}/libtrojita_plugins.so
 %{_datadir}/appdata/trojita.appdata.xml
-%{_datadir}/applications/trojita.desktop
+%{_datadir}/applications/org.kde.%{name}.desktop
 %{_datadir}/icons/hicolor/*/*/*
 %{_datadir}/trojita
 
