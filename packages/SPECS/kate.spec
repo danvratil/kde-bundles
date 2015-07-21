@@ -45,6 +45,7 @@ BuildRequires:  kf5-kwallet-dev
 
 BuildRequires:  qt5-qtbase-dev
 
+Requires:       ksbinit
 
 %description
 %{summary}.
