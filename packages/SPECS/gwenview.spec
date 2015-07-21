@@ -66,6 +66,11 @@ for s in %{buildroot}/%{_kf5_datadir}/icons/hicolor/*; do
 done
 sed -i "s/Icon=%{name}/Icon=org.kde.%{name}/" %{buildroot}/%{_kf5_datadir}/applications/org.kde.%{name}.desktop
 
+cat >> %{buildroot}/%{_kf5_bindir}/ksbinit_%{name} << EOF
+#!/bin/sh
+ksbinit %{name}
+EOF
+chmod a+x %{buildroot}/%{_kf5_bindir}/ksbinit_%{name}
 
 %check
 appstream-util validate-relax --nonet %{buildroot}%{_kf5_datadir}/appdata/%{name}.appdata.xml ||:
@@ -88,7 +93,8 @@ gtk-update-icon-cache %{_kf5_datadir}/icons/hicolor &> /dev/null || :
 
 %files
 %doc COPYING
-%{_kf5_bindir}/%{name}*
+%{_kf5_bindir}/%{name}
+%{_kf5_bindir}/ksbinit_%{name}
 %{_datadir}/applications/org.kde.%{name}.desktop
 %{_datadir}/appdata/%{name}.appdata.xml
 %{_datadir}/icons/hicolor/*/*/*

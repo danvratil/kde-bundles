@@ -76,6 +76,11 @@ for s in %{buildroot}/%{_kf5_datadir}/icons/hicolor/*; do
 done
 sed -i "s/Icon=%{name}/Icon=%{name}/" %{buildroot}/%{_kf5_datadir}/applications/org.kde.%{name}.desktop
 
+cat >> %{buildroot}/%{_kf5_bindir}/ksbinit_%{name} << EOF
+#!/bin/sh
+ksbinit %{name}
+EOF
+chmod a+x %{buildroot}/%{_kf5_bindir}/ksbinit_%{name}
 
 %check
 desktop-file-validate %{buildroot}%{_kf5_datadir}/applications/org.kde.%{name}.desktop
@@ -100,6 +105,7 @@ fi
 %doc AUTHORS
 %config(noreplace) %{_prefix}/%{_sysconfdir}/xdg/katerc
 %{_kf5_bindir}/kate
+%{_kf5_bindir}/ksbinit_kate
 %{_kf5_libdir}/libkdeinit5_kate.so
 %{_kf5_datadir}/applications/org.kde.kate.desktop
 %{_datadir}/appdata/org.kde.kate.appdata.xml

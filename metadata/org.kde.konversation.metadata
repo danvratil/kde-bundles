@@ -1,13 +1,13 @@
 [Application]
-‌name=org.kde.konversation
-‌runtime=org.kde.KF5.Platform/x86_64/5.9.0
-‌sdk=org.kde.KF5.Sdk/x86_64/5.9.0
-‌command=ksbinit konversation
+name=org.kde.konversation
+runtime=org.kde.KF5.Platform/x86_64/5.9.0
+sdk=org.kde.KF5.Sdk/x86_64/5.9.0
+command=ksbinit_konversation
 ‌
 [Context]
-shared=network
-sockets=x11;pulseaudio
-filesystem=home
+shared=network;
+sockets=x11;pulseaudio;
+filesystem=home;
 ‌
 [Session Bus Policy]
 org.kde.konversation=own

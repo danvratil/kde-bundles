@@ -1,13 +1,13 @@
 [Application]
-‌name=org.kde.konsole
-‌runtime=org.kde.KF5.Platform/x86_64/5.9.0
-‌sdk=org.kde.KF5.Sdk/x86_64/5.9.0
-‌command=ksbinit konsole
-‌
+name=org.kde.konsole
+runtime=org.kde.KF5.Platform/x86_64/5.9.0
+sdk=org.kde.KF5.Sdk/x86_64/5.9.0
+command=ksbinit konsole
+
 [Context]
-shared=network;ipc
-sockets=x11;pulseaudio;session-bus;system-bus
-filesystems=host
+shared=network;ipc;
+sockets=x11;pulseaudio;session-bus;system-bus;
+filesystems=host;
 ‌
 [Session Bus Policy]
 org.kde.kglobalaccel=talk

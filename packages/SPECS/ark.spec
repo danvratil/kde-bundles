@@ -28,13 +28,13 @@ BuildRequires:  kf5-rpm-macros
 
 BuildRequires:  qt5-qtbase-dev
 
-
 BuildRequires:  kf5-karchive-dev
 BuildRequires:  kf5-kconfig-dev
 BuildRequires:  kf5-kpty-dev
 BuildRequires:  kf5-khtml-dev
 BuildRequires:  kf5-kdelibs4support-dev
 
+Requires:       ksbinit
 
 %description
 %{summary}.
@@ -65,9 +65,16 @@ for s in %{buildroot}/%{_kf5_datadir}/icons/hicolor/*; do
 done
 sed -i "s/Icon=%{name}/Icon=org.kde.%{name}/" %{buildroot}/%{_kf5_datadir}/applications/org.kde.%{name}.desktop
 
+cat >> %{buildroot}/%{_kf5_bindir}/ksbinit_%{name} << EOF
+#!/bin/sh
+ksbinit %{name}
+EOF
+chmod a+x %{buildroot}/%{_kf5_bindir}/ksbinit_%{name}
+
 %check
 appstream-util validate-relax --nonet %{buildroot}%{_kf5_datadir}/appdata/%{name}.appdata.xml ||:
 desktop-file-validate %{buildroot}%{_kf5_datadir}/applications/org.kde.%{name}.desktop
+
 
 
 %post -p /sbin/ldconfig
@@ -77,6 +84,7 @@ desktop-file-validate %{buildroot}%{_kf5_datadir}/applications/org.kde.%{name}.d
 %files
 %doc COPYING
 %{_kf5_bindir}/%{name}
+%{_kf5_bindir}/ksbinit_%{name}
 %{_kf5_datadir}/applications/org.kde.%{name}.desktop
 %{_datadir}/appdata/%{name}.appdata.xml
 %{_docdir}/HTML/*/ark

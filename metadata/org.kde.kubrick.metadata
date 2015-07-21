@@ -1,14 +1,14 @@
 [Application]
-‌name=org.kde.kubrick
-‌runtime=org.kde.KF5.Platform/x86_64/5.9.0
-‌sdk=org.kde.KF5.Sdk/x86_64/5.9.0
-‌command=kubrick
-‌
+name=org.kde.kubrick
+runtime=org.kde.KF5.Platform/x86_64/5.9.0
+sdk=org.kde.KF5.Sdk/x86_64/5.9.0
+command=kubrick
+
 [Context]
-shared=network
-devices=dri
-sockets=x11;pulseaudio
-filesystem=home
+shared=network;
+devices=dri;
+sockets=x11;pulseaudio;
+filesystem=home;
 ‌
 [Session Bus Policy]
 org.kde.kglobalaccel=talk

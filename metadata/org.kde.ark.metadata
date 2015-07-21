@@ -1,11 +1,10 @@
 [Application]
-‌name=org.kde.ark
-‌runtime=org.kde.KF5.Platform/x86_64/5.9.0
-‌sdk=org.kde.KF5.Sdk/x86_64/5.9.0
-‌command=ksbinit ark
-‌
+name=org.kde.ark
+runtime=org.kde.KF5.Platform/x86_64/5.9.0
+sdk=org.kde.KF5.Sdk/x86_64/5.9.0
+command=ksbinit_ark
+
 [Context]
-shared=network
-sockets=x11;pulseaudio
-filesystem=home
-‌
+shared=network;
+sockets=x11;pulseaudio;
+filesystem=home;

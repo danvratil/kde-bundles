@@ -158,8 +158,7 @@ function(createAndExportBundle BUNDLE_URI)
         COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Finishing build and generating metadata\"
         COMMAND xdg-app build-finish --command=\"${BUNDLE_EXECUTABLE}\" ${builddir}
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/metadata/${BUNDLE_URI}.metadata ${builddir}/metadata
-        COMMAND echo \"${BUNDLE_URI}: build\" > ${builddir}/.COMMITMSG
-        COMMAND nano ${builddir}/.COMMITMSG
+        COMMAND ${CMAKE_SOURCE_DIR}/commit.sh ${BUNDLE_URI}
         COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Exporting build into repository\"
         COMMAND xdg-app build-export repo ${builddir} -b \"`cat ${builddir}/.COMMITMSG`\"
         COMMAND ${CMAKE_COMMAND} -E remove ${builddir}/.COMMITMSG
@@ -245,7 +244,7 @@ add_bundle(org.kde.kate
 
 add_bundle(org.kde.gwenview
            PACKAGE gwenview
-           DEPENDS exiv2 libkdcraw
+           DEPENDS ksbinit exiv2 libkdcraw
 )
 
 add_bundle(org.kde.kcalc
@@ -262,6 +261,7 @@ add_bundle(org.kde.konsole
 #)
 add_bundle(org.kde.ark
            PACKAGE ark
+           DEPENDS ksbinit
 )
 add_bundle(org.kde.marble
            PACKAGE marble
