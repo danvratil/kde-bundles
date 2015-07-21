@@ -1,0 +1,18 @@
+[Application]
+name=org.kde.kate
+runtime=org.kde.KF5.Platform/x86_64/5.9.0
+sdk=org.kde.KF5.Sdk/x86_64/5.9.0
+command=ksbinit kate
+
+[Context]
+shared=network;
+sockets=x11;pulseaudio;
+filesystem=homst;home;
+
+[Session Bus Policy]
+org.kde.kate=own
+org.kde.kglobalaccel=talk
+org.kde.kded5=talk
+org.kde.klauncher5=talk
+org.kde.kuiserver=talk
+org.kde.kiod5=talk

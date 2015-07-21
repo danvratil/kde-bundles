@@ -1,0 +1,9 @@
+[Application]
+‌name=org.kde.kcharselect
+‌runtime=org.kde.KF5.Platform/x86_64/5.9.0
+‌sdk=org.kde.KF5.Sdk/x86_64/5.9.0
+‌command=kcharselect
+‌
+[Context]
+shared=network
+sockets=x11;pulseaudio

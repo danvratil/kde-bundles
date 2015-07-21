@@ -142,51 +142,26 @@ function(buildRPM builddir package uri allSources buildRPMs runtimeRPMs)
 endfunction()
 
 
-function(createAndExportBundle uri rpms executable privileges environments)
-    set(arguments "")
-    foreach (priv ${privileges})
-        if ("${priv}" STREQUAL "SESSION_DBUS")
-            set(arguments ${arguments} --allow=session-dbus)
-        elseif ("${priv}" STREQUAL "SYSTEM_DBUS")
-            set(arguments ${arguments} --allow=system-dbus)
-        elseif ("${priv}" STREQUAL "PULSEAUDIO")
-            set(arguments ${arguments} --allow=pulseaudio)
-        elseif ("${priv}" STREQUAL "X11")
-            set(arguments ${arguments} --allow=x11)
-        elseif ("${priv}" STREQUAL "WAYLAND")
-            set(arguments ${arguments} --allow=wayland)
-        elseif ("${priv}" STREQUAL "NETWORK")
-            set(arguments ${arguments} --allow=network)
-        elseif ("${priv}" STREQUAL "HOMEDIR")
-            set(arguments ${arguments} --allow=homedir)
-        elseif ("${priv}" STREQUAL "HOSTFS")
-            set(arguments ${arguments} --allow=host-fs)
-        elseif ("${priv}" STREQUAL "DRI")
-            set(arguments ${arguments} --allow=dri)
-        elseif ("${priv}" STREQUAL "IPC")
-            set(arguments ${arguments} --allow=ipc)
-        else ()
-            message(FATAL_ERROR "Unknown privileges: ${priv}")
-        endif()
-    endforeach()
+function(createAndExportBundle BUNDLE_URI)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs RPMS)
+    cmake_parse_arguments(BUNDLE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    foreach(env ${environments})
-        set(arguments ${arguments} --env=${env})
-    endforeach()
-
-    set(builddir "${CMAKE_SOURCE_DIR}/build/${uri}")
+    set(builddir "${CMAKE_SOURCE_DIR}/build/${BUNDLE_URI}")
     add_custom_command(
-        TARGET ${uri} POST_BUILD
+        TARGET ${BUNDLE_URI} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Preparing builddir for export\"
-        COMMAND xdg-app build-init ${builddir} -v ${KF5_SDK}.Var ${uri} ${KF5_SDK} ${KF5_PLATFORM} ${KF5_SDK_VERSION}
+        COMMAND xdg-app build-init ${builddir} -v ${KF5_SDK}.Var ${BUNDLE_URI} ${KF5_SDK} ${KF5_PLATFORM} ${KF5_SDK_VERSION}
         COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Installing packages into builddir\"
-        COMMAND xdg-app build ${builddir} rpm -i ${rpms}
+        COMMAND xdg-app build ${builddir} rpm -i ${BUNDLE_RPMS}
         COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Finishing build and generating metadata\"
-        COMMAND xdg-app build-finish --command=\"${executable}\" ${arguments} ${builddir}
-        COMMAND echo \"Build ${uri}\" > ${builddir}/.COMMITMSG
+        COMMAND xdg-app build-finish --command=\"${BUNDLE_EXECUTABLE}\" ${builddir}
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/metadata/${BUNDLE_URI}.metadata ${builddir}/metadata
+        COMMAND echo \"${BUNDLE_URI}: build\" > ${builddir}/.COMMITMSG
         COMMAND nano ${builddir}/.COMMITMSG
         COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Exporting build into repository\"
-        COMMAND xdg-app build-export repo ${builddir} -s \"`cat ${builddir}/.COMMITMSG`\"
+        COMMAND xdg-app build-export repo ${builddir} -b \"`cat ${builddir}/.COMMITMSG`\"
         COMMAND ${CMAKE_COMMAND} -E remove ${builddir}/.COMMITMSG
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${builddir}
         DEPENDS ${specFile} ${sourceFiles}
@@ -196,8 +171,8 @@ endfunction()
 
 function(add_bundle BUNDLE_URI)
     set(options)
-    set(oneValueArgs PACKAGE EXECUTABLE)
-    set(multiValueArgs DEPENDS PRIVILEGES ENVIRON)
+    set(oneValueArgs PACKAGE)
+    set(multiValueArgs DEPENDS)
     cmake_parse_arguments(BUNDLE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if ("${BUNDLE_URI}" STREQUAL "")
@@ -205,11 +180,6 @@ function(add_bundle BUNDLE_URI)
     endif()
     if ("${BUNDLE_PACKAGE}" STREQUAL "")
         message(FATAL_ERROR "Bundle source RPM package name must be specified")
-    endif()
-
-    # EXECUTABLE is optional, use package name when not set
-    if ("${BUNDLE_EXECUTABLE}" STREQUAL "")
-        set(BUNDLE_EXECUTABLE "${BUNDLE_PACKAGE}")
     endif()
 
     add_custom_target(${BUNDLE_PACKAGE})
@@ -225,7 +195,7 @@ function(add_bundle BUNDLE_URI)
     add_custom_target(${BUNDLE_URI} ALL DEPENDS ${BUNDLE_PACKAGE})
     buildRPM(${builddir} ${BUNDLE_PACKAGE} ${BUNDLE_URI} "${allSources}" "${buildRPMs}" "${runtimeRPMs}")
 
-    createAndExportBundle(${BUNDLE_URI} "${runtimeRPMs}" ${BUNDLE_EXECUTABLE} "${BUNDLE_PRIVILEGES}" "${BUNDLE_ENVIRON}")
+    createAndExportBundle(${BUNDLE_URI} RPMS "${runtimeRPMs}")
 
     set(allSources ${allSources} PARENT_SCOPE)
 endfunction()
@@ -237,7 +207,6 @@ function(add_package package)
     cmake_parse_arguments(PACKAGE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     add_custom_target(${package})
-
     set(builddir "${CMAKE_SOURCE_DIR}/build/${package}")
     set(buildRPMs)
     set(runtimeRPMs)
@@ -257,6 +226,8 @@ function(add_package package)
 endfunction()
 
 # Packages
+add_package(ksbinit)
+
 add_package(gsm)
 add_package(libsndfile DEPENDS gsm)
 add_package(libkdegames DEPENDS libsndfile)
@@ -269,70 +240,60 @@ add_package(qimageblitz)
 # Bundles
 add_bundle(org.kde.kate
            PACKAGE kate
-           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR HOSTFS
+           DEPENDS ksbinit
 )
+
 add_bundle(org.kde.gwenview
            PACKAGE gwenview
            DEPENDS exiv2 libkdcraw
-           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
 )
+
 add_bundle(org.kde.kcalc
            PACKAGE kcalc
            PRIVILEGES X11
 )
 add_bundle(org.kde.konsole
            PACKAGE konsole
-           PRIVILEGES X11 SESSION_DBUS SYSTEM_DBUS NETWORK HOMEDIR HOSTFS IPC
 )
+
 #add_bundle(org.kde.Dolphin
 #           PACKAGE dolphin
 #           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR HOSTFS
 #)
 add_bundle(org.kde.ark
            PACKAGE ark
-           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
 )
 add_bundle(org.kde.marble
            PACKAGE marble
-           EXECUTABLE marble-qt
-           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR DRI
 )
 add_bundle(org.kde.trojita
            PACKAGE trojita
-           PRIVILEGES X11 NETWORK HOMEDIR
 )
 add_bundle(org.kde.konversation
            PACKAGE konversation
-           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
 )
 add_bundle(org.kde.kcharselect
            PACKAGE kcharselect
-           PRIVILEGES X11 SESSION_DBUS NETWORK
 )
 add_bundle(org.kde.kolourpaint
            PACKAGE kolourpaint
            DEPENDS qimageblitz
-           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
 )
 
 # GAMES
 add_bundle(org.kde.bomber
            PACKAGE bomber
            DEPENDS libkdegames
-           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR
 )
 add_bundle(org.kde.kubrick
            PACKAGE kubrick
            DEPENDS libkdegames
-           PRIVILEGES X11 HOMEDIR DRI
 )
 add_bundle(org.kde.knetwalk
            PACKAGE knetwalk
            DEPENDS libkdegames
-           PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR DRI
 )
 add_bundle(org.kde.khangman
           PACKAGE khangman
           DEPENDS libkdegames libkeduvocdocument
-          PRIVILEGES X11 SESSION_DBUS NETWORK HOMEDIR DRI
 )
