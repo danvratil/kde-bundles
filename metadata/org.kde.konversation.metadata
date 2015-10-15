@@ -2,13 +2,13 @@
 name=org.kde.konversation
 runtime=org.kde.KF5.Platform/x86_64/5.9.0
 sdk=org.kde.KF5.Sdk/x86_64/5.9.0
-command=ksbinit_konversation
-‌
+command=konversation
+
 [Context]
 shared=network;
 sockets=x11;pulseaudio;
 filesystem=home;
-‌
+
 [Session Bus Policy]
 org.kde.konversation=own
 org.kde.kglobalaccel=talk

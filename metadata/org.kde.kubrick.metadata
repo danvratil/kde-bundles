@@ -9,7 +9,7 @@ shared=network;
 devices=dri;
 sockets=x11;pulseaudio;
 filesystem=home;
-‌
+
 [Session Bus Policy]
 org.kde.kglobalaccel=talk
 org.kde.kded5=talk
