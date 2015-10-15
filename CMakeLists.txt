@@ -192,12 +192,11 @@ function(createAndExportBundle BUNDLE_URI)
         COMMAND xdg-app build-finish --command=\"${BUNDLE_EXECUTABLE}\" ${builddir}
         # Copy the metadata int othe bundle
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/metadata/${BUNDLE_URI}.metadata ${builddir}/metadata
-        # Prepares the ostree commit
+        # Creates .COMMITMSG file with the commit message, either by opening nano or by reading
+        # $COMMITMSG envrionment variable
         COMMAND ${CMAKE_SOURCE_DIR}/commit.sh ${BUNDLE_URI}
         COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --green \"Exporting build into repository\"
         # Export the bundle and commits it to $REPO using commit message from .COMMITMSG
-        # TODO: Enable this if you want to be asked for commit message every time
-        # COMMAND nano ${builddir}/.COMMITMSG
         COMMAND xdg-app build-export repo ${builddir} -b \"`cat ${builddir}/.COMMITMSG`\"
         COMMAND ${CMAKE_COMMAND} -E remove ${builddir}/.COMMITMSG
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${builddir}
